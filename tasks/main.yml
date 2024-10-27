@@ -1,0 +1,40 @@
+---
+
+## Init
+
+- name: Ensure project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ docker_project_path }}"
+    - "{{ docker_project_path }}/data"
+    - "{{ docker_project_path }}/meilisearch"
+  tags: ["init"]
+
+## Configure
+
+- name: Template .env
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ docker_project_path }}/.env"
+    mode: '0664'
+  notify: Restart hoarder
+
+- name: Template docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_project_path }}/docker-compose.yml"
+    mode: '0644'
+    # validate: "{{ docker_cli }} compose -f %s config"
+    backup: true
+
+- name: Validate docker-compose.yml
+  ansible.builtin.command: "{{ docker_cli }} compose -f {{ docker_project_path }}/docker-compose.yml config"
+  changed_when: false
+
+## Run
+
+- name: Start app
+  ansible.builtin.include_role: { name: djuuu.docker_project, tasks_from: compose-up }

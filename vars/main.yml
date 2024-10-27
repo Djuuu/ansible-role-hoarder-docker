@@ -1,0 +1,3 @@
+---
+
+docker_project_name: "{{ hoarder_project_name }}"

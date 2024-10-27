@@ -1,0 +1,72 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+# {{ template_fullpath }}
+
+name: {{ docker_project_slug }}
+
+services:
+
+  web:
+    container_name: {{ docker_project_slug }}
+    image: ghcr.io/hoarder-app/hoarder:${HOARDER_VERSION:-release}
+    restart: unless-stopped
+
+    {{ docker_project_compose_service_additional_options | indent(4) }}
+
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /data
+      MEILI_ADDR: http://meilisearch:7700
+      BROWSER_WEB_URL: http://chrome:9222
+
+    volumes:
+      - data:/data
+
+    labels:
+      {{ traefik_project_base_labels | indent(6) }}
+
+      # What's up Docker? - https://github.com/getwud/wud
+      wud.tag.include: ^\d+\.\d+\.\d+$$
+
+  chrome:
+    image: gcr.io/zenika-hub/alpine-chrome:{{ hoarder_chrome_version }}
+    restart: unless-stopped
+    command:
+      - --no-sandbox
+      - --disable-gpu
+      - --disable-dev-shm-usage
+      - --remote-debugging-address=0.0.0.0
+      - --remote-debugging-port=9222
+      - --hide-scrollbars
+
+  meilisearch:
+    image: getmeili/meilisearch:{{ hoarder_meilisearch_version }}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilisearch:/meili_data
+
+volumes:
+
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./data
+      o: bind
+
+  meilisearch:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./meilisearch
+      o: bind
+
+networks:
+  {{ docker_project_default_network | indent(2) }}
+
+{{ docker_project_compose_additional_options }}
