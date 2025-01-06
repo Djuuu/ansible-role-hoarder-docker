@@ -30,7 +30,7 @@ Available role variables are listed below, along with default values (see `defau
 
 hoarder_project_name: hoarder
 
-# Docker project dynamic vars (uses `docker_project_name` prefix, adapt if overriden)
+# Docker project dynamic vars (uses `docker_project_name` prefix, adapt if overridden)
 
 hoarder_traefik_loadbalancer_server_port: 3000
 
